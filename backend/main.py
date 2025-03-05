@@ -1,8 +1,12 @@
 import sqlite3
+from typing import Annotated
 from fastapi import FastAPI, HTTPException, exceptions
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from hashlib import sha256
 import re
+
+from shared import *
 
 app = FastAPI()
 
@@ -14,7 +18,7 @@ except Exception as ex:
 usersDB = usersDBconn.cursor()
 
 usersDB.execute('''
-CREATE TABLE IF NOT EXISTS Users (
+CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     surname TEXT NOT NULL,
@@ -24,15 +28,19 @@ CREATE TABLE IF NOT EXISTS Users (
 ''')
 usersDBconn.commit()
 
+class Cookies(BaseModel):
+    email: str
+    hash: str
+
+@app.get("/")
+async def root():
+    raise HTTPException(status_code=400, detail="Hello World")
+
 class RegisterModel(BaseModel):
     name: str
     surname: str
     email: str
     password: str
-
-@app.get("/")
-async def root():
-    raise HTTPException(status_code=400, detail="Hello World")
 
 @app.post("/users/register/")
 async def register(data: RegisterModel):
@@ -55,7 +63,7 @@ async def register(data: RegisterModel):
         raise HTTPException(status_code=400, detail="Niepoprawny email.")
 
     usersDB.execute('''
-    SELECT * from Users WHERE name = ? AND surname = ? LIMIT 1;
+    SELECT * from users WHERE name = ? AND surname = ? LIMIT 1;
     ''', (
         name,
         surname
@@ -70,7 +78,7 @@ async def register(data: RegisterModel):
         hash.update((password[4:7] + password + password[2:4]).encode())
         password = hash.hexdigest()
         usersDB.execute('''
-        INSERT INTO Users (name, surname, email, password) VALUES (?, ?, ?, ?);
+        INSERT INTO users (name, surname, email, password) VALUES (?, ?, ?, ?);
         ''', (
             name,
             surname,
@@ -82,4 +90,33 @@ async def register(data: RegisterModel):
         raise HTTPException(status_code=500, detail="Błąd rejestracji (nasza wina)")
     return { "message": f"Pomyślnie zarejestrowano {name} {surname}" }
 
+class LoginModel(BaseModel):
+    email: str
+    password: str
+
+@app.post("/users/login/")
+async def login(data: LoginModel):
+    """ kopiowanie danych do sanityzacji przed wstrzykiwaniem sql'a """
+    email: str = data.email[:]
+    password: str = data.password[:]
+
+    email.replace('"', "").replace("\\", "")
+    password.replace('"', '\\"').replace("\\", "\\\\") #hasła muszą być bezpieczne, a jak chodzi o resztę to jak ktoś może mieć \ i " w imieniu ?
+
+    hash = sha256()
+    hash.update((password[4:7] + password + password[2:4]).encode())
+    password = hash.hexdigest()
+
+    user = getUser(email, password)
+
+    if user: #czy jest osoba o podanum imieniu i nazwisku
+        content = { "message": f"Pomyslnie zalogowano" }
+        response = JSONResponse(content=content)
+        response.set_cookie(key="email", value=email)
+        response.set_cookie(key="hash", value=password)
+        return response
+    else:
+        raise HTTPException(status_code=400, detail="Email lub hasło niepoprawne.")
+
+import api.projects.general
 # usersDBconn.close() #zkomentowane bo fastapi nigdy się nie zamyka a to zamyka bazę pred nim
