@@ -1,10 +1,17 @@
-from sqlite3 import Connection, Cursor
-from fastapi import FastAPI,
+from sqlite3 import Connection, Cursor, connect
+from fastapi import FastAPI
 from pydantic import BaseModel
 
-app: FastAPI
-usersDBconn: sqlite3.Connection
-usersDB: sqlite3.Cursor
+app: FastAPI = FastAPI()
+usersDBconn: Connection
+usersDB: Cursor
+
+try:
+    usersDBconn = connect("data/users.db")
+except Exception as ex:
+    print(ex)
+    exit()
+usersDB = usersDBconn.cursor()
 
 class Cookies(BaseModel):
     email: str

@@ -8,8 +8,6 @@ import re
 
 from shared import *
 
-app = FastAPI()
-
 try:
     usersDBconn = sqlite3.connect("data/users.db")
 except Exception as ex:
@@ -23,7 +21,8 @@ CREATE TABLE IF NOT EXISTS users (
     name TEXT NOT NULL,
     surname TEXT NOT NULL,
     email TEXT NOT NULL,
-    password TEXT NOT NULL
+    password TEXT NOT NULL,
+    projects JSON
 );
 ''')
 usersDBconn.commit()
@@ -78,12 +77,13 @@ async def register(data: RegisterModel):
         hash.update((password[4:7] + password + password[2:4]).encode())
         password = hash.hexdigest()
         usersDB.execute('''
-        INSERT INTO users (name, surname, email, password) VALUES (?, ?, ?, ?);
+        INSERT INTO users (name, surname, email, password, projects) VALUES (?, ?, ?, ?, ?);
         ''', (
             name,
             surname,
             email,
-            password
+            password,
+            "[]"
         ))
         usersDBconn.commit();
     except:
@@ -118,5 +118,5 @@ async def login(data: LoginModel):
     else:
         raise HTTPException(status_code=400, detail="Email lub hasło niepoprawne.")
 
-import api.projects.general
+import api.projects_general
 # usersDBconn.close() #zkomentowane bo fastapi nigdy się nie zamyka a to zamyka bazę pred nim
