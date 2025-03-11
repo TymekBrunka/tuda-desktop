@@ -19,6 +19,10 @@ class ProjectDeletion(BaseModel):
 
 @app.post("/projects/create")
 async def create_project(cookies: Annotated[Cookies, Cookie()], item: ProjectCreation):
+    """ kopiowanie danych do sanityzacji przed wstrzykiwaniem sql'a """
+    name: str = item.name[:]
+    name.replace('"', '\\"').replace("\\", "\\\\")
+
     user = getUser(cookies.email, cookies.hash)
     if not user:
         raise HTTPException(status_code=400, detail="Niezalogowano lub błędne dane logowania")
@@ -46,7 +50,7 @@ async def create_project(cookies: Annotated[Cookies, Cookie()], item: ProjectCre
 
     DB.execute(f'''
     INSERT INTO project_data (name) VALUES
-    ("{item.name}");
+    ("{name}");
     ''')
 
     DB.execute('''
@@ -76,11 +80,12 @@ async def create_project(cookies: Annotated[Cookies, Cookie()], item: ProjectCre
     ''')
 
     usersDB.execute(f'''
-    UPDATE users SET projects = json_insert(projects, '$[#]', '{{"name":"{item.name}", "id":"{uuid}"}}')
+    UPDATE users SET projects = json_insert(projects, '$[#]', '{{"name":"{name}", "id":"{uuid}"}}')
     ''')
 
     # ''')
     DBconn.commit()
+    usersDBconn.commit()
     DBconn.close()
     return { "message": "Pomyślnie utworzono nowy projekt." }
 
