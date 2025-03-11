@@ -13,10 +13,17 @@ if &shortmess =~ 'A'
 else
   set shortmess=aoO
 endif
+badd +25 term://~/Desktop/tuda-desktop/backend//7172:C:/WINDOWS/system32/cmd.exe
+badd +114 ~/Desktop/tuda-desktop/backend/api/projects_general.py
+badd +1 ~/Desktop/tuda-desktop/backend/shared.py
+badd +88 ~/Desktop/tuda-desktop/backend/main.py
 argglobal
 %argdel
+tabnew +setlocal\ bufhidden=wipe
+tabrewind
+edit ~/Desktop/tuda-desktop/backend/api/projects_general.py
 argglobal
-enew
+balt ~/Desktop/tuda-desktop/backend/shared.py
 setlocal fdm=manual
 setlocal fde=0
 setlocal fmr={{{,}}}
@@ -25,6 +32,34 @@ setlocal fdl=99
 setlocal fml=1
 setlocal fdn=20
 setlocal fen
+silent! normal! zE
+let &fdl = &fdl
+let s:l = 114 - ((38 * winheight(0) + 23) / 46)
+if s:l < 1 | let s:l = 1 | endif
+keepjumps exe s:l
+normal! zt
+keepjumps 114
+normal! 027|
+tabnext
+edit ~/Desktop/tuda-desktop/backend/main.py
+argglobal
+balt ~/Desktop/tuda-desktop/backend/shared.py
+setlocal fdm=manual
+setlocal fde=0
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=99
+setlocal fml=1
+setlocal fdn=20
+setlocal fen
+silent! normal! zE
+let &fdl = &fdl
+let s:l = 88 - ((36 * winheight(0) + 23) / 46)
+if s:l < 1 | let s:l = 1 | endif
+keepjumps exe s:l
+normal! zt
+keepjumps 88
+normal! 0
 tabnext 1
 if exists('s:wipebuf') && len(win_findbuf(s:wipebuf)) == 0 && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
   silent exe 'bwipe ' . s:wipebuf

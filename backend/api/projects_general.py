@@ -14,9 +14,6 @@ from shared import *
 class ProjectCreation(BaseModel):
     name: str
 
-class ProjectDeletion(BaseModel):
-    id: str
-
 @app.post("/projects/create")
 async def create_project(cookies: Annotated[Cookies, Cookie()], item: ProjectCreation):
     """ kopiowanie danych do sanityzacji przed wstrzykiwaniem sql'a """
@@ -89,6 +86,9 @@ async def create_project(cookies: Annotated[Cookies, Cookie()], item: ProjectCre
     DBconn.close()
     return { "message": "Pomyślnie utworzono nowy projekt." }
 
+class ProjectDeletion(BaseModel):
+    id: str
+
 @app.post("/projects/delete")
 async def delete_project(cookies: Annotated[Cookies, Cookie()], item: ProjectDeletion):
     user = getUser(cookies.email, cookies.hash)
@@ -103,6 +103,21 @@ async def delete_project(cookies: Annotated[Cookies, Cookie()], item: ProjectDel
     
     try:
         unlink(f"data/projects/{user[0]}/{item.id}.db")
+
+        usersDB.execute(f'''
+        UPDATE users
+        SET projects = (
+            SELECT json_group_array(value)
+            FROM (
+                SELECT value
+                FROM json_each(projects)
+                WHERE json_extract(value, '$.id') != '{item.id}'
+            )
+        )
+        WHERE id = '{user[0]}';
+        ''')
+        usersDBconn.commit()
+
         return { "message" : "Pomyślnie usunięto projekt." }
     except Exception as ex:
         print(ex)
