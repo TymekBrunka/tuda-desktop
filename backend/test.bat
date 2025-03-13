@@ -1,0 +1,1 @@
+curl -i -X POST http://localhost:8000/users/register -H "Content-Type: application/json" -d "{""name"":""Zbigniew"",""surname"":""Kucharski"",""email"":""kucharski@poczta.pl"",""password"":"">:C>:C>:C""}"
