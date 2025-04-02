@@ -80,6 +80,15 @@ async def create_project(cookies: Annotated[Cookies, Cookie()], item: ProjectCre
     UPDATE users SET projects = json_insert(projects, '$[#]', '{{"name":"{name}", "id":"{uuid}"}}')
     ''')
 
+    DB.execute(f'''
+    INSERT INTO users VALUES (?, ?, ?, ?);
+    ''', (
+        user[0],
+        user[1],
+        user[2],
+        user[3]
+    ))
+
     # ''')
     DBconn.commit()
     usersDBconn.commit()

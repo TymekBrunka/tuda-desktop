@@ -119,4 +119,5 @@ async def login(data: LoginModel):
         raise HTTPException(status_code=400, detail="Email lub hasło niepoprawne.")
 
 import api.projects_general
+import api.groups_general
 # usersDBconn.close() #zkomentowane bo fastapi nigdy się nie zamyka a to zamyka bazę pred nim
